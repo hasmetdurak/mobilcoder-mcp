@@ -1,0 +1,13 @@
+{
+  "name": "mcp-signaling-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for WebRTC signaling",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}
+

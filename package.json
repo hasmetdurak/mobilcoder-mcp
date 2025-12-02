@@ -1,0 +1,27 @@
+{
+  "name": "mobilecoder-mcp",
+  "version": "1.0.0",
+  "description": "Mobile app to code from your phone via MCP protocol",
+  "private": true,
+  "workspaces": [
+    "mcp-server",
+    "web"
+  ],
+  "scripts": {
+    "dev:web": "cd web && npm run dev",
+    "build:web": "cd web && npm run build",
+    "dev:mcp": "cd mcp-server && npm run dev",
+    "build:mcp": "cd mcp-server && npm run build",
+    "deploy:worker": "cd workers && npx wrangler deploy"
+  },
+  "keywords": [
+    "mcp",
+    "cursor",
+    "windsurf",
+    "mobile",
+    "coding"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+
