@@ -1,5 +1,4 @@
 import SimplePeer from 'simple-peer';
-import * as fetch from 'node-fetch';
 
 export class WebRTCConnection {
   private peer: SimplePeer.Instance | null = null;
@@ -34,7 +33,7 @@ export class WebRTCConnection {
         this.peer.on('signal', async (signal) => {
           // Send answer to signaling server
           try {
-            await fetch.default(`${this.signalingUrl}/answer`, {
+            await fetch(`${this.signalingUrl}/answer`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ code: this.code, signal })
@@ -92,7 +91,7 @@ export class WebRTCConnection {
   private async startPollingForOffer(): Promise<void> {
     const poll = async () => {
       try {
-        const response = await fetch.default(`${this.signalingUrl}/poll?code=${this.code}`);
+        const response = await fetch(`${this.signalingUrl}/poll?code=${this.code}`);
         if (response.ok) {
           const data = await response.json() as { signal?: any };
           if (data.signal && this.peer) {

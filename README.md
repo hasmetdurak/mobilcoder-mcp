@@ -1,191 +1,266 @@
 # MobileCoderMCP
 
-🚀 **Code from Anywhere** - Use Cursor from your phone. Free forever.
+Code from anywhere, right from your phone. Connect your mobile device to Cursor, Windsurf, or VS Code and start coding on the go.
 
-MobileCoderMCP is a web-based mobile app that connects directly to your desktop coding environment (Cursor, Windsurf, Zed, etc.) via MCP protocol. Users sign in with Google, do one-time MCP setup, and instantly start coding from their phone.
+I built this because I wanted to code during my commute, lunch breaks, or whenever I'm away from my desk. No complicated setup, no credit card required - just sign in and start coding.
+
+## What is this?
+
+MobileCoderMCP is a simple web app that connects your phone to your desktop code editor using the Model Context Protocol (MCP). It creates a direct, encrypted connection between your devices, so you can send commands and see results in real-time.
+
+Think of it as a remote control for your code editor, but instead of clicking buttons, you just type what you want to do in plain English.
 
 ## Features
 
-- 📱 **Works on Any Phone** - Progressive Web App, no app store needed
-- 🎯 **Direct Cursor Integration** - Seamless connection via MCP protocol
-- ⚡ **Real-time Code Changes** - See your changes instantly on desktop
-- 🆓 **Completely Free** - No costs, no credit card required
-- 🔐 **End-to-End Encrypted** - Your code stays private and secure
+- **Works on any phone** - Just open it in your browser, no app store needed
+- **Direct editor integration** - Works with Cursor, Windsurf, VS Code, and Gravity IDE
+- **Real-time updates** - See your changes instantly on your desktop
+- **Completely free** - No hidden costs, no credit card required
+- **Secure by default** - End-to-end encrypted, your code never touches our servers
 
-## Architecture
+## How it works
 
-- **Frontend**: React + Vite + TypeScript (Cloudflare Pages)
-- **MCP Server**: Node.js + TypeScript (runs on desktop)
-- **Signaling**: Cloudflare Workers (WebRTC coordination)
-- **Connection**: WebRTC P2P (direct connection, no server costs)
-
-## Quick Setup
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/hasmetdurak/mobilcoder-mcp.git
-cd mobilcoder-mcp
+```
+Your Phone → WebRTC (P2P) → Your Computer → Code Editor
 ```
 
-### 2. Install dependencies
+The connection is direct between your devices. We only use a small signaling server (Cloudflare Workers) to help establish the initial connection. After that, everything flows directly between your phone and computer.
 
-```bash
-# Install root dependencies
-npm install
+## Quick start
 
-# Install MCP server dependencies
-cd mcp-server
-npm install
+### On your phone
 
-# Install web app dependencies
-cd ../web
-npm install
+1. Visit the web app (or bookmark it)
+2. Sign in with Google
+3. Get your connection code
+
+### On your computer
+
+1. Run this command:
+   ```bash
+   npx mobile-coder-mcp init
+   ```
+2. Enter the code from your phone
+3. That's it! Start coding.
+
+The MCP server will automatically configure itself for Cursor or Windsurf. If you're using VS Code, you'll need to install an MCP extension first.
+
+## Installation
+
+### Prerequisites
+
+- Node.js 18+ on your computer
+- A modern browser on your phone
+- Cursor, Windsurf, VS Code, or Gravity IDE installed
+
+### Step-by-step
+
+1. **Clone this repo** (if you want to run it yourself):
+   ```bash
+   git clone https://github.com/hasmetdurak/mobilcoder-mcp.git
+   cd mobilcoder-mcp
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   # Root level
+   npm install
+   
+   # MCP server
+   cd mcp-server && npm install && cd ..
+   
+   # Web app
+   cd web && npm install && cd ..
+   ```
+
+3. **Set up Firebase** (for authentication):
+   - Create a project at [Firebase Console](https://console.firebase.google.com/)
+   - Enable Google Sign-In
+   - Create a `.env` file in the `web` directory:
+     ```env
+     VITE_FIREBASE_API_KEY=your_key_here
+     VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+     VITE_FIREBASE_PROJECT_ID=your_project_id
+     VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+     VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+     VITE_FIREBASE_APP_ID=your_app_id
+     VITE_SIGNALING_SERVER=https://your-worker.workers.dev
+     ```
+
+4. **Deploy the signaling server** (Cloudflare Workers):
+   ```bash
+   cd workers
+   npm install
+   npx wrangler deploy
+   ```
+   Update the `VITE_SIGNALING_SERVER` in your `.env` with the deployed URL.
+
+5. **Run locally**:
+   ```bash
+   # Web app
+   cd web && npm run dev
+   
+   # MCP server (in another terminal)
+   cd mcp-server && npm run build && npm start -- --code=YOUR_CODE
+   ```
+
+## Project structure
+
 ```
-
-### 3. Setup Firebase (for authentication)
-
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Google Authentication
-3. Create a `.env` file in the `web` directory:
-
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_SIGNALING_SERVER=https://mcp-signal.workers.dev
-```
-
-### 4. Deploy Cloudflare Worker (Signaling Server)
-
-```bash
-cd workers
-npm install
-npx wrangler deploy
-```
-
-Update the signaling URL in your `.env` file with the deployed worker URL.
-
-### 5. Build and run
-
-**Web App (Development):**
-```bash
-cd web
-npm run dev
-```
-
-**MCP Server (Development):**
-```bash
-cd mcp-server
-npm run build
-npm start -- --code=YOUR_CODE --signaling=YOUR_SIGNALING_URL
+mobilecoder-mcp/
+├── mcp-server/          # The MCP server that runs on your computer
+│   ├── src/
+│   │   ├── index.ts     # CLI commands (init, start, etc.)
+│   │   ├── webrtc.ts    # WebRTC connection handling
+│   │   └── mcp-handler.ts # MCP protocol implementation
+│   └── package.json
+├── web/                 # The React web app
+│   ├── src/
+│   │   ├── components/  # UI components
+│   │   ├── lib/         # Utilities (auth, webrtc, storage)
+│   │   └── store/        # State management (Zustand)
+│   └── package.json
+├── workers/             # Cloudflare Workers (signaling server)
+│   └── signaling.ts     # WebRTC signaling endpoints
+└── README.md
 ```
 
 ## Usage
 
-### First Time Setup
+### First time setup
 
-1. Visit the web app and sign in with Google
-2. Get your connection code from the dashboard
-3. Run on your computer:
+1. Open the web app on your phone
+2. Sign in with Google
+3. You'll see a connection code on the dashboard
+4. On your computer, run:
    ```bash
    npx mobile-coder-mcp init --code=YOUR_CODE
    ```
-4. Start coding from your phone!
+5. The server will auto-configure your editor
+6. Go back to your phone and tap "Connect"
+7. Start coding!
 
-### Daily Usage
+### Daily use
 
-1. Open the web app (already logged in)
-2. Auto-connects to desktop (if online)
-3. Start typing commands immediately
+1. Open the web app (you're already signed in)
+2. It automatically connects to your desktop if it's online
+3. Type a command and hit send
+4. Watch the magic happen on your desktop
 
-## Project Structure
+### Example commands
 
 ```
-mobilecoder-mcp/
-├── mcp-server/          # MCP server for desktop
-│   ├── src/
-│   │   ├── index.ts     # CLI entry point
-│   │   ├── webrtc.ts    # WebRTC connection
-│   │   └── mcp-handler.ts # MCP protocol
-│   └── package.json
-├── web/                 # React web app
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── lib/         # Utilities
-│   │   └── store/       # State management
-│   └── package.json
-├── workers/             # Cloudflare Workers
-│   └── signaling.ts     # WebRTC signaling
-└── README.md
+"Add a dark mode toggle to the settings page"
+"Fix the bug in the login form validation"
+"Create a new component called UserCard"
+"Update the README with installation instructions"
 ```
 
 ## Development
 
-### MCP Server Commands
+### MCP Server
 
 ```bash
-# Initialize and configure
-mobile-coder-mcp init --code=ABC123
+# Build
+cd mcp-server
+npm run build
 
-# Start server
-mobile-coder-mcp start --code=ABC123
+# Start with a code
+npm start -- --code=ABC123
 
 # Check status
-mobile-coder-mcp status
+npm start -- status
 
-# Reset configuration
-mobile-coder-mcp reset
+# Reset config
+npm start -- reset
 ```
 
-### Web App Development
+### Web App
 
 ```bash
 cd web
-npm run dev      # Start dev server
-npm run build    # Build for production
+npm run dev      # Development server
+npm run build    # Production build
 npm run preview  # Preview production build
 ```
 
 ## Deployment
 
-### Cloudflare Pages (Web App)
+### Web App (Cloudflare Pages)
 
 1. Connect your GitHub repo to Cloudflare Pages
-2. Set build command: `cd web && npm install && npm run build`
-3. Set output directory: `web/dist`
-4. Add environment variables from `.env`
+2. Build command: `cd web && npm install && npm run build`
+3. Output directory: `web/dist`
+4. Add environment variables from your `.env`
 
-### Cloudflare Workers (Signaling)
+### Signaling Server (Cloudflare Workers)
 
 ```bash
 cd workers
 npx wrangler deploy
 ```
 
-### NPM Package (MCP Server)
+### MCP Server (NPM)
+
+If you want to publish the MCP server as an npm package:
 
 ```bash
 cd mcp-server
 npm publish
 ```
 
+## How I built this
+
+I started this project because I was frustrated that I couldn't code when I was away from my desk. I wanted something simple, free, and secure.
+
+**Tech choices:**
+- **React + Vite** - Fast development, great DX
+- **WebRTC** - Direct P2P connection, no server costs
+- **Cloudflare Workers** - Free signaling server (100K requests/day)
+- **MCP Protocol** - Native editor integration
+- **Zustand** - Simple state management
+
+The whole thing runs on free tiers, so there are no infrastructure costs. The connection is direct between your devices, so your code never touches any server.
+
+## Troubleshooting
+
+**Can't connect?**
+- Make sure your computer is on and connected to the internet
+- Check that the MCP server is running
+- Verify your editor (Cursor/Windsurf) is open
+- Try restarting the MCP server
+
+**Commands not working?**
+- Make sure your project folder is open in the editor
+- Check that the files you're referencing actually exist
+- Look at the error message for specific details
+
+**Connection keeps dropping?**
+- Check your internet connection on both devices
+- Try disabling VPN temporarily
+- Check firewall settings
+
+For more help, check out the [User Guide](USER_GUIDE.md).
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Found a bug? Have an idea? Pull requests are welcome!
+
+1. Fork the repo
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
-MIT
+MIT - Do whatever you want with it.
 
 ## Support
 
-For issues and questions, please open an issue on GitHub.
+- **Documentation**: Check out [USER_GUIDE.md](USER_GUIDE.md)
+- **Issues**: Open an issue on GitHub
+- **Questions**: Feel free to reach out
 
 ---
 
-**Made with ❤️ for developers who code on the go**
-
+Built with ❤️ by a developer who codes on the go
