@@ -1,0 +1,13 @@
+# MobileCoderMCP Rules
+# This file defines strict rules that the AI must follow for every request.
+
+# Type Safety
+Never use 'any' type in TypeScript. Always define proper interfaces or types.
+
+# Styling
+Must use TailwindCSS classes for styling. Do not use inline styles or separate CSS files unless absolutely necessary.
+
+# Code Quality
+- Prefer functional components over class components.
+- Use meaningful variable and function names.
+- Keep components small and focused.
