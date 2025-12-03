@@ -11,21 +11,21 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/" 
-          element={user ? <Navigate to="/dashboard" replace /> : <Landing />} 
+        <Route
+          path="/"
+          element={user ? <Navigate to="/dashboard" replace /> : <Landing />}
         />
-        <Route 
-          path="/dashboard" 
-          element={user ? <Dashboard /> : <Navigate to="/" replace />} 
+        <Route
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/" replace />}
         />
-        <Route 
-          path="/chat" 
-          element={user ? <Chat /> : <Navigate to="/" replace />} 
+        <Route
+          path="/chat"
+          element={user ? <Chat /> : <Navigate to="/" replace />}
         />
-        <Route 
-          path="/settings" 
-          element={user ? <Settings /> : <Navigate to="/" replace />} 
+        <Route
+          path="/settings"
+          element={user ? <Settings /> : <Navigate to="/" replace />}
         />
       </Routes>
     </BrowserRouter>
@@ -33,4 +33,3 @@ function App() {
 }
 
 export default App;
-

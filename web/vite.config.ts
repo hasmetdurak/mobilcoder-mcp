@@ -87,6 +87,9 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    'global': 'globalThis',
+  },
   server: {
     port: 3000,
     open: true,
@@ -95,4 +98,3 @@ export default defineConfig({
     outDir: 'dist',
   },
 });
-

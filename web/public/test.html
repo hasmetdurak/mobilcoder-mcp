@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MobileCoderMCP - Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1e1e1e 0%, #0c4a6e 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(to right, #fff, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    p {
+      font-size: 1.25rem;
+      color: #cbd5e1;
+      margin-bottom: 2rem;
+    }
+    .button {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: white;
+      color: #1e1e1e;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .button:hover {
+      transform: scale(1.05);
+    }
+    .status {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 MobileCoderMCP</h1>
+    <p>Code from Anywhere</p>
+    <a href="/" class="button">Go to App →</a>
+    
+    <div class="status">
+      <div>✅ Server is running</div>
+      <div>📍 Port: 3000</div>
+      <div id="time"></div>
+    </div>
+  </div>
+
+  <script>
+    setInterval(() => {
+      document.getElementById('time').textContent = '🕐 ' + new Date().toLocaleTimeString();
+    }, 1000);
+  </script>
+</body>
+</html>
