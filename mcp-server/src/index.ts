@@ -16,22 +16,37 @@ program
 
 program
   .command('init')
-  .description('Initialize MCP server and configure Cursor/Windsurf')
+  .description('Initialize MCP server and configure IDE')
   .option('-c, --code <code>', 'Connection code from mobile app')
   .option('-s, --signaling <url>', 'Signaling server URL', 'https://mcp-signal.workers.dev')
+  .option('-i, --ide <ide>', 'IDE to configure (cursor, windsurf, vscode, qoder, treai, kiro, all)', 'all')
   .action(async (options) => {
     const code = options.code || generateConnectionCode();
     const signalingUrl = options.signaling;
+    const ide = options.ide.toLowerCase();
 
     console.log('🚀 Initializing MobileCoderMCP...\n');
 
-    // Create MCP config for Cursor
-    const cursorConfigPath = path.join(os.homedir(), '.cursor', 'mcp.json');
-    await configureCursor(cursorConfigPath, code, signalingUrl);
+    const configs = {
+      cursor: path.join(os.homedir(), '.cursor', 'mcp.json'),
+      windsurf: path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
+      vscode: path.join(os.homedir(), '.vscode', 'mcp.json'),
+      qoder: path.join(os.homedir(), '.qoder', 'mcp.json'),
+      treai: path.join(os.homedir(), '.treai', 'mcp.json'),
+      kiro: path.join(os.homedir(), '.kiro', 'mcp.json'),
+    };
 
-    // Create MCP config for Windsurf
-    const windsurfConfigPath = path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json');
-    await configureWindsurf(windsurfConfigPath, code, signalingUrl);
+    if (ide === 'all') {
+      for (const [ideName, configPath] of Object.entries(configs)) {
+        await configureIDE(configPath, ideName, code, signalingUrl);
+      }
+    } else if (configs[ide as keyof typeof configs]) {
+      await configureIDE(configs[ide as keyof typeof configs], ide, code, signalingUrl);
+    } else {
+      console.error(`❌ Unknown IDE: ${ide}`);
+      console.log('   Supported: cursor, windsurf, vscode, qoder, treai, kiro, all');
+      process.exit(1);
+    }
 
     console.log(`\n✅ Setup complete!`);
     console.log(`\n📋 Your connection code: ${code}`);
@@ -59,7 +74,7 @@ program
 
     // Initialize WebRTC connection
     const webrtc = new WebRTCConnection(options.code, options.signaling);
-    
+
     // Start MCP server with WebRTC handler
     await startMCPServer(webrtc);
   });
@@ -76,14 +91,28 @@ program
 program
   .command('reset')
   .description('Reset connection and remove config')
-  .action(async () => {
+  .option('-i, --ide <ide>', 'IDE to reset (cursor, windsurf, vscode, qoder, treai, kiro, all)', 'all')
+  .action(async (options) => {
     console.log('🔄 Resetting MobileCoderMCP...\n');
-    
-    const cursorConfigPath = path.join(os.homedir(), '.cursor', 'mcp.json');
-    const windsurfConfigPath = path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json');
 
-    await removeFromConfig(cursorConfigPath, 'mobile-coder');
-    await removeFromConfig(windsurfConfigPath, 'mobile-coder');
+    const configs = {
+      cursor: path.join(os.homedir(), '.cursor', 'mcp.json'),
+      windsurf: path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
+      vscode: path.join(os.homedir(), '.vscode', 'mcp.json'),
+      qoder: path.join(os.homedir(), '.qoder', 'mcp.json'),
+      treai: path.join(os.homedir(), '.treai', 'mcp.json'),
+      kiro: path.join(os.homedir(), '.kiro', 'mcp.json'),
+    };
+
+    const ide = options.ide.toLowerCase();
+
+    if (ide === 'all') {
+      for (const configPath of Object.values(configs)) {
+        await removeFromConfig(configPath, 'mobile-coder');
+      }
+    } else if (configs[ide as keyof typeof configs]) {
+      await removeFromConfig(configs[ide as keyof typeof configs], 'mobile-coder');
+    }
 
     console.log('✅ Configuration reset complete\n');
   });
@@ -94,7 +123,7 @@ function generateConnectionCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-async function configureCursor(configPath: string, code: string, signalingUrl: string) {
+async function configureIDE(configPath: string, ideName: string, code: string, signalingUrl: string) {
   const configDir = path.dirname(configPath);
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
@@ -105,7 +134,7 @@ async function configureCursor(configPath: string, code: string, signalingUrl: s
     try {
       config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     } catch (e) {
-      console.warn('⚠️  Could not read existing Cursor config, creating new one');
+      console.warn(`⚠️  Could not read existing ${ideName} config, creating new one`);
     }
   }
 
@@ -114,7 +143,7 @@ async function configureCursor(configPath: string, code: string, signalingUrl: s
   }
 
   const serverPath = path.join(__dirname, '..', 'dist', 'index.js');
-  
+
   config.mcpServers['mobile-coder'] = {
     command: 'node',
     args: [serverPath, 'start', '--code', code, '--signaling', signalingUrl],
@@ -125,41 +154,7 @@ async function configureCursor(configPath: string, code: string, signalingUrl: s
   };
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log('✅ Cursor configuration updated');
-}
-
-async function configureWindsurf(configPath: string, code: string, signalingUrl: string) {
-  const configDir = path.dirname(configPath);
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-
-  let config: any = {};
-  if (fs.existsSync(configPath)) {
-    try {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    } catch (e) {
-      console.warn('⚠️  Could not read existing Windsurf config, creating new one');
-    }
-  }
-
-  if (!config.mcpServers) {
-    config.mcpServers = {};
-  }
-
-  const serverPath = path.join(__dirname, '..', 'dist', 'index.js');
-  
-  config.mcpServers['mobile-coder'] = {
-    command: 'node',
-    args: [serverPath, 'start', '--code', code, '--signaling', signalingUrl],
-    env: {
-      MCP_CONNECTION_CODE: code,
-      MCP_SIGNALING_URL: signalingUrl
-    }
-  };
-
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log('✅ Windsurf configuration updated');
+  console.log(`✅ ${ideName.charAt(0).toUpperCase() + ideName.slice(1)} configuration updated`);
 }
 
 async function removeFromConfig(configPath: string, serverName: string) {
@@ -178,4 +173,3 @@ async function removeFromConfig(configPath: string, serverName: string) {
     console.warn(`⚠️  Could not update ${configPath}`);
   }
 }
-

@@ -1,10 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  OAuthProvider,
+  signInWithPopup,
   signOut as firebaseSignOut,
-  User as FirebaseUser 
+  User as FirebaseUser
 } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -19,7 +21,11 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+
+// Providers
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
+const appleProvider = new OAuthProvider('apple.com');
 
 export interface User {
   uid: string;
@@ -39,11 +45,31 @@ function mapFirebaseUser(firebaseUser: FirebaseUser): User {
 
 export async function signInWithGoogle(): Promise<User> {
   try {
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, googleProvider);
     return mapFirebaseUser(result.user);
   } catch (error: any) {
     console.error('Sign in error:', error);
     throw new Error(error.message || 'Failed to sign in with Google');
+  }
+}
+
+export async function signInWithGithub(): Promise<User> {
+  try {
+    const result = await signInWithPopup(auth, githubProvider);
+    return mapFirebaseUser(result.user);
+  } catch (error: any) {
+    console.error('Sign in error:', error);
+    throw new Error(error.message || 'Failed to sign in with GitHub');
+  }
+}
+
+export async function signInWithApple(): Promise<User> {
+  try {
+    const result = await signInWithPopup(auth, appleProvider);
+    return mapFirebaseUser(result.user);
+  } catch (error: any) {
+    console.error('Sign in error:', error);
+    throw new Error(error.message || 'Failed to sign in with Apple');
   }
 }
 
@@ -61,4 +87,3 @@ export function onAuthStateChanged(callback: (user: User | null) => void) {
     callback(firebaseUser ? mapFirebaseUser(firebaseUser) : null);
   });
 }
-

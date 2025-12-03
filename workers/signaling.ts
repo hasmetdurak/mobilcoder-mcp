@@ -1,6 +1,12 @@
 // Cloudflare Worker for WebRTC signaling
 // Stores peer signals temporarily (expires in 5 min)
 
+interface Env {
+  DB: D1Database;
+  KV: KVNamespace;
+  COTURN_SECRET: string;
+}
+
 interface SignalData {
   signal: any;
   timestamp: number;
@@ -22,7 +28,7 @@ setInterval(() => {
 }, 60000); // Check every minute
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // CORS headers
@@ -38,6 +44,43 @@ export default {
     }
 
     try {
+      // --- COTURN CREDENTIALS ---
+      if (url.pathname === '/ice-servers' && request.method === 'GET') {
+        const ttl = 24 * 3600; // 24 hours
+        const username = Math.floor(Date.now() / 1000) + ':' + 'mobilecoder';
+        const secret = env.COTURN_SECRET || 'mock-secret'; // Fallback for dev
+
+        // Mock HMAC generation (In prod, use crypto.subtle)
+        // For now, we return a standard structure.
+        // Real implementation requires HMAC-SHA1 of username with secret.
+
+        return Response.json({
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            {
+              urls: 'turn:global.relay.mobilecoder.com:3478',
+              username: username,
+              credential: 'mock-credential' // Replace with real HMAC
+            }
+          ]
+        }, { headers: corsHeaders });
+      }
+
+      // --- ANALYTICS (D1) ---
+      if (url.pathname === '/analytics/log' && request.method === 'POST') {
+        const { userId, commandType, success, duration } = await request.json() as any;
+
+        if (env.DB) {
+          await env.DB.prepare(
+            'INSERT INTO analytics (user_id, command_type, success, duration, created_at) VALUES (?, ?, ?, ?, ?)'
+          ).bind(userId, commandType, success ? 1 : 0, duration, Date.now()).run();
+        }
+
+        return new Response('Logged', { headers: corsHeaders });
+      }
+
+      // --- SIGNALING ---
+
       // Mobile posts offer
       if (url.pathname === '/offer' && request.method === 'POST') {
         const body = await request.json() as { code: string; signal: any };
@@ -53,15 +96,15 @@ export default {
       if (url.pathname === '/poll' && request.method === 'GET') {
         const code = url.searchParams.get('code');
         if (!code) {
-          return new Response('Missing code parameter', { 
+          return new Response('Missing code parameter', {
             status: 400,
-            headers: corsHeaders 
+            headers: corsHeaders
           });
         }
 
         const key = `offer-${code}`;
         const data = signals.get(key);
-        
+
         if (data) {
           // Optionally delete after reading (one-time use)
           // signals.delete(key);
@@ -86,15 +129,15 @@ export default {
       if (url.pathname === '/answer' && request.method === 'GET') {
         const code = url.searchParams.get('code');
         if (!code) {
-          return new Response('Missing code parameter', { 
+          return new Response('Missing code parameter', {
             status: 400,
-            headers: corsHeaders 
+            headers: corsHeaders
           });
         }
 
         const key = `answer-${code}`;
         const data = signals.get(key);
-        
+
         if (data) {
           // Optionally delete after reading (one-time use)
           // signals.delete(key);
@@ -106,22 +149,21 @@ export default {
 
       // Health check
       if (url.pathname === '/health' && request.method === 'GET') {
-        return Response.json({ 
+        return Response.json({
           status: 'ok',
-          signals: signals.size 
+          signals: signals.size
         }, { headers: corsHeaders });
       }
 
-      return new Response('Not Found', { 
+      return new Response('Not Found', {
         status: 404,
-        headers: corsHeaders 
+        headers: corsHeaders
       });
     } catch (error) {
-      return new Response(`Error: ${error}`, { 
+      return new Response(`Error: ${error}`, {
         status: 500,
-        headers: corsHeaders 
+        headers: corsHeaders
       });
     }
   },
 };
-

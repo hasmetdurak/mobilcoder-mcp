@@ -2,6 +2,19 @@ name = "mcp-signaling"
 main = "signaling.ts"
 compatibility_date = "2024-12-01"
 
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "mobilecoder-analytics"
+database_id = "YOUR_D1_DATABASE_ID" # Replace with actual ID after creation
+
+# KV Namespace Binding (Optional for persistent signals)
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "YOUR_KV_NAMESPACE_ID"
+
+[vars]
+COTURN_SECRET = "your-coturn-secret-key" # Set via wrangler secret put in prod
+
 [env.production]
 name = "mcp-signaling"
-
