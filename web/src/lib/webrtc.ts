@@ -1,9 +1,11 @@
 import SimplePeer from 'simple-peer';
 
 export interface WebRTCMessage {
-  type: 'command' | 'result' | 'command_received' | 'error';
+  type: 'command' | 'result' | 'command_received' | 'error' | 'tools_list' | 'cli_output' | 'cli_command';
   text?: string;
   command?: string;
+  tool?: string;
+  tools?: any[];
   data?: any;
   timestamp?: number;
 }

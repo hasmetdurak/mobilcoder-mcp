@@ -30,7 +30,7 @@ export class WebRTCConnection {
           }
         });
 
-        this.peer.on('signal', async (signal) => {
+        this.peer.on('signal', async (signal: any) => {
           // Send answer to signaling server
           try {
             await fetch(`${this.signalingUrl}/answer`, {
@@ -52,7 +52,7 @@ export class WebRTCConnection {
           resolve();
         });
 
-        this.peer.on('data', (data) => {
+        this.peer.on('data', (data: any) => {
           try {
             const message = JSON.parse(data.toString());
             if (this.onMessageCallback) {
@@ -63,7 +63,7 @@ export class WebRTCConnection {
           }
         });
 
-        this.peer.on('error', (error) => {
+        this.peer.on('error', (error: any) => {
           console.error('WebRTC error:', error);
           this.isConnected = false;
           if (this.onDisconnectCallback) {

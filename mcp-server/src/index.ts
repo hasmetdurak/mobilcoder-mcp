@@ -4,61 +4,15 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { startMCPServer } from './mcp-handler';
-import { WebRTCConnection } from './webrtc';
+import { UniversalAgent } from './agent';
 
-const program = new Command();
+// ... (existing imports)
 
-program
-  .name('mobile-coder-mcp')
-  .description('MCP server for MobileCoderMCP - enables mobile to desktop coding')
-  .version('1.0.0');
-
-program
-  .command('init')
-  .description('Initialize MCP server and configure IDE')
-  .option('-c, --code <code>', 'Connection code from mobile app')
-  .option('-s, --signaling <url>', 'Signaling server URL', 'https://mcp-signal.workers.dev')
-  .option('-i, --ide <ide>', 'IDE to configure (cursor, windsurf, vscode, qoder, treai, kiro, all)', 'all')
-  .action(async (options) => {
-    const code = options.code || generateConnectionCode();
-    const signalingUrl = options.signaling;
-    const ide = options.ide.toLowerCase();
-
-    console.log('🚀 Initializing MobileCoderMCP...\n');
-
-    const configs = {
-      cursor: path.join(os.homedir(), '.cursor', 'mcp.json'),
-      windsurf: path.join(os.homedir(), '.codeium', 'windsurf', 'mcp_config.json'),
-      vscode: path.join(os.homedir(), '.vscode', 'mcp.json'),
-      qoder: path.join(os.homedir(), '.qoder', 'mcp.json'),
-      treai: path.join(os.homedir(), '.treai', 'mcp.json'),
-      kiro: path.join(os.homedir(), '.kiro', 'mcp.json'),
-    };
-
-    if (ide === 'all') {
-      for (const [ideName, configPath] of Object.entries(configs)) {
-        await configureIDE(configPath, ideName, code, signalingUrl);
-      }
-    } else if (configs[ide as keyof typeof configs]) {
-      await configureIDE(configs[ide as keyof typeof configs], ide, code, signalingUrl);
-    } else {
-      console.error(`❌ Unknown IDE: ${ide}`);
-      console.log('   Supported: cursor, windsurf, vscode, qoder, treai, kiro, all');
-      process.exit(1);
-    }
-
-    console.log(`\n✅ Setup complete!`);
-    console.log(`\n📋 Your connection code: ${code}`);
-    console.log(`\n💡 Next steps:`);
-    console.log(`   1. Open your mobile app`);
-    console.log(`   2. Enter this code: ${code}`);
-    console.log(`   3. Start coding from your phone!\n`);
-  });
+// ... (existing code)
 
 program
   .command('start')
-  .description('Start the MCP server')
+  .description('Start the Universal Agent')
   .option('-c, --code <code>', 'Connection code')
   .option('-s, --signaling <url>', 'Signaling server URL', 'https://mcp-signal.workers.dev')
   .action(async (options) => {
@@ -68,15 +22,16 @@ program
       process.exit(1);
     }
 
-    console.log('🔌 Starting MCP server...');
+    console.log('🔌 Starting Universal Agent...');
     console.log(`   Connection code: ${options.code}`);
     console.log(`   Signaling server: ${options.signaling}\n`);
 
     // Initialize WebRTC connection
     const webrtc = new WebRTCConnection(options.code, options.signaling);
 
-    // Start MCP server with WebRTC handler
-    await startMCPServer(webrtc);
+    // Start Universal Agent
+    const agent = new UniversalAgent(webrtc);
+    await agent.start();
   });
 
 program

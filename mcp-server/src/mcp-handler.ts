@@ -6,7 +6,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { WebRTCConnection } from './webrtc';
 
-export async function startMCPServer(webrtc: WebRTCConnection): Promise<void> {
+// Queue to store commands received from mobile
+const commandQueue: string[] = [];
+
+export async function setupMCPServer(webrtc: WebRTCConnection): Promise<void> {
   // Create MCP server
   const server = new Server(
     {
@@ -30,17 +33,25 @@ export async function startMCPServer(webrtc: WebRTCConnection): Promise<void> {
     return {
       tools: [
         {
-          name: 'execute_command',
-          description: 'Execute a coding command from mobile device',
+          name: 'get_next_command',
+          description: 'Get the next pending command from the mobile device',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'send_message',
+          description: 'Send a message or status update to the mobile device',
           inputSchema: {
             type: 'object',
             properties: {
-              command: {
+              message: {
                 type: 'string',
-                description: 'The command to execute (e.g., "Add a login form", "Fix the navbar")',
+                description: 'The message to send to the user',
               },
             },
-            required: ['command'],
+            required: ['message'],
           },
         },
       ],
@@ -51,36 +62,57 @@ export async function startMCPServer(webrtc: WebRTCConnection): Promise<void> {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    if (name === 'execute_command') {
-      const command = (args as { command?: string })?.command;
-      
+    if (name === 'get_next_command') {
+      const command = commandQueue.shift();
+
       if (!command) {
         return {
           content: [
             {
               type: 'text',
-              text: 'Error: Command is required',
+              text: 'No pending commands.',
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: command,
+          },
+        ],
+      };
+    }
+
+    if (name === 'send_message') {
+      const message = (args as { message?: string })?.message;
+
+      if (!message) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Error: Message is required',
             },
           ],
           isError: true,
         };
       }
 
-      // Send command to mobile via WebRTC (for acknowledgment)
-      // The actual execution happens through MCP protocol to Cursor/Windsurf
+      // Send message to mobile via WebRTC
       webrtc.send({
-        type: 'command_received',
-        command: command,
+        type: 'result', // Using 'result' type for general messages for now
+        data: message,
         timestamp: Date.now(),
       });
 
-      // Return the command for Cursor/Windsurf to process
-      // The AI will interpret and execute the command
       return {
         content: [
           {
             type: 'text',
-            text: `Command received: ${command}\n\nThis command will be processed by the AI assistant. The mobile device has been notified.`,
+            text: `Message sent to mobile: ${message}`,
           },
         ],
       };
@@ -97,38 +129,24 @@ export async function startMCPServer(webrtc: WebRTCConnection): Promise<void> {
     };
   });
 
-  // Connect WebRTC
-  console.log('🔗 Connecting to mobile device...');
+  // Connect WebRTC listeners
+  // Note: We don't call connect() here anymore, UniversalAgent handles that
   webrtc.onConnect(() => {
-    console.log('📱 Mobile device connected and ready!');
+    console.log('📱 [MCP] Mobile device connected');
   });
 
   webrtc.onMessage((message) => {
-    console.log('📨 Message from mobile:', message);
+    // If it's a command, add it to the queue
+    if (message.type === 'command' && message.text) {
+      console.log(`   [MCP] Queuing command: ${message.text}`);
+      commandQueue.push(message.text);
+    }
   });
-
-  webrtc.onDisconnect(() => {
-    console.log('📱 Mobile device disconnected');
-  });
-
-  try {
-    await webrtc.connect();
-  } catch (error) {
-    console.error('Failed to connect WebRTC:', error);
-  }
 
   // Start MCP server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.log('🚀 MCP server started and ready!');
-  console.log('   Waiting for commands from mobile device...\n');
-
-  // Keep process alive
-  process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down...');
-    webrtc.disconnect();
-    process.exit(0);
-  });
+  console.log('✅ MCP Server initialized (stdio transport)');
 }
 

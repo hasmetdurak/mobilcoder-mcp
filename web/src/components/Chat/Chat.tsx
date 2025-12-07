@@ -8,6 +8,7 @@ import Header from './Header';
 import SmartInput from './SmartInput';
 import DiffViewer from './DiffViewer';
 import Sidebar from '../Dashboard/Sidebar';
+import ToolSelector, { ToolType } from './ToolSelector';
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export default function Chat() {
   const [webrtc, setWebrtc] = useState<WebRTCClient | null>(null);
   const [diffData, setDiffData] = useState<{ oldCode: string; newCode: string; fileName: string; summary: string } | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTool, setActiveTool] = useState<ToolType>('mcp');
+  const [availableTools, setAvailableTools] = useState<string[]>(['mcp', 'cursor']); // Default tools
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export default function Chat() {
             client.send({
               type: 'command',
               text: item.text,
+              tool: 'mcp', // Default to MCP for queued items for now
               timestamp: item.timestamp,
             });
             await queueManager.removeFromQueue(item.id);
@@ -54,7 +58,19 @@ export default function Chat() {
       });
 
       client.onMessage((message) => {
-        if (message.type === 'result') {
+        if (message.type === 'tools_list') {
+          // Update available tools based on what desktop detected
+          const tools = message.tools || [];
+          const toolIds = tools.map((t: any) => t.id);
+          // Always keep 'cursor' (terminal) available
+          if (!toolIds.includes('cursor')) toolIds.push('cursor');
+          setAvailableTools(toolIds);
+
+          addMessage({
+            text: `Connected! Detected tools: ${tools.map((t: any) => t.name).join(', ')}`,
+            sender: 'mcp'
+          });
+        } else if (message.type === 'result' || message.type === 'cli_output') {
           // Check if result contains diff data (mock check for now, real implementation depends on MCP response structure)
           if (message.data && typeof message.data === 'object' && message.data.diff) {
             setDiffData(message.data.diff);
@@ -116,11 +132,21 @@ export default function Chat() {
 
     // Send command via WebRTC
     try {
-      webrtc.send({
-        type: 'command',
-        text: command,
-        timestamp: Date.now(),
-      });
+      if (activeTool === 'mcp') {
+        webrtc.send({
+          type: 'command',
+          text: command,
+          timestamp: Date.now(),
+        });
+      } else {
+        // Send to CLI adapter
+        webrtc.send({
+          type: 'cli_command',
+          command: activeTool === 'cursor' ? command : `${activeTool} "${command}"`, // Wrap in quotes for Claude/Gemini
+          tool: activeTool,
+          timestamp: Date.now(),
+        });
+      }
     } catch (error) {
       console.error('Failed to send command:', error);
       // Fallback to queue
@@ -149,12 +175,19 @@ export default function Chat() {
         projectName="MobileCoder"
       />
 
-      {/* Floating Header */}
-      <Header
-        projectName="MobileCoder" // This should come from MCP handshake
-        connectionStatus={isConnected ? 'connected' : 'connecting'}
-        onMenuClick={() => setIsSidebarOpen(true)}
-      />
+      {/* Floating Header with Tool Selector */}
+      <div className="fixed top-0 left-0 right-0 z-30 px-4 py-4 bg-[#1e1e1e]/80 backdrop-blur-md border-b border-gray-800 flex items-center justify-between">
+        <Header
+          projectName="MobileCoder"
+          connectionStatus={isConnected ? 'connected' : 'connecting'}
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
+        <ToolSelector
+          activeTool={activeTool}
+          onSelect={setActiveTool}
+          availableTools={availableTools}
+        />
+      </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 pt-24 pb-32 space-y-6 z-10 no-scrollbar">
@@ -175,8 +208,8 @@ export default function Chat() {
           >
             <div
               className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-sm ${msg.sender === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-none'
-                  : 'bg-[#252526] text-gray-100 border border-gray-700/50 rounded-bl-none'
+                ? 'bg-blue-600 text-white rounded-br-none'
+                : 'bg-[#252526] text-gray-100 border border-gray-700/50 rounded-bl-none'
                 }`}
             >
               <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-light">{msg.text}</p>
