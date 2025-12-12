@@ -1,0 +1,452 @@
+/* Mobile-First Responsive Design System */
+
+/* ======== CORE MOBILE VARIABLES ======== */
+:root {
+  /* Mobile Breakpoints */
+  --mobile-xs: 320px;   /* Small phones */
+  --mobile-sm: 375px;   /* iPhone SE, Galaxy S */
+  --mobile-md: 414px;   /* iPhone 12 Pro */
+  --mobile-lg: 428px;   /* iPhone 14 Pro Max */
+  --tablet-sm: 768px;   /* iPad Mini */
+  --tablet-md: 834px;   /* iPad */
+  --tablet-lg: 1024px;  /* iPad Pro */
+  
+  /* Touch Targets (Apple HIG minimum 44x44px) */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  
+  /* Mobile Spacing */
+  --mobile-padding-xs: 8px;
+  --mobile-padding-sm: 12px;
+  --mobile-padding-md: 16px;
+  --mobile-padding-lg: 20px;
+  --mobile-padding-xl: 24px;
+  
+  /* Mobile Typography */
+  --mobile-font-size-xs: 12px;
+  --mobile-font-size-sm: 14px;
+  --mobile-font-size-md: 16px;
+  --mobile-font-size-lg: 18px;
+  --mobile-font-size-xl: 20px;
+  
+  /* Safe Area Insets (Notch support) */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* ======== MOBILE-FIRST BASE STYLES ======== */
+/* Mobile-first approach: Start with mobile styles, then enhance for larger screens */
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices */
+  .touch-target {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    padding: 12px 16px;
+  }
+  
+  .touch-target-comfortable {
+    min-height: var(--touch-target-comfortable);
+    min-width: var(--touch-target-comfortable);
+    padding: 14px 20px;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .no-hover-touch:hover {
+    background-color: inherit !important;
+    transform: none !important;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS devices */
+  .ios-fix {
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+  }
+  
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important; /* Prevents zoom */
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+}
+
+/* Android Chrome specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .android-fix {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ======== RESPONSIVE BREAKPOINTS ======== */
+
+/* Extra Small Mobile (320px and up) */
+@media (min-width: 320px) {
+  .container-xs-mobile {
+    padding: var(--mobile-padding-xs);
+  }
+  
+  .text-xs-mobile {
+    font-size: var(--mobile-font-size-xs);
+  }
+}
+
+/* Small Mobile (375px and up) */
+@media (min-width: 375px) {
+  .container-sm-mobile {
+    padding: var(--mobile-padding-sm);
+  }
+  
+  .text-sm-mobile {
+    font-size: var(--mobile-font-size-sm);
+  }
+  
+  .grid-sm-mobile {
+    grid-template-columns: 1fr;
+    gap: var(--mobile-padding-sm);
+  }
+}
+
+/* Medium Mobile (414px and up) */
+@media (min-width: 414px) {
+  .container-md-mobile {
+    padding: var(--mobile-padding-md);
+  }
+  
+  .text-md-mobile {
+    font-size: var(--mobile-font-size-md);
+  }
+  
+  .grid-md-mobile {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--mobile-padding-md);
+  }
+}
+
+/* Large Mobile (428px and up) */
+@media (min-width: 428px) {
+  .container-lg-mobile {
+    padding: var(--mobile-padding-lg);
+  }
+  
+  .text-lg-mobile {
+    font-size: var(--mobile-font-size-lg);
+  }
+  
+  .grid-lg-mobile {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--mobile-padding-lg);
+  }
+}
+
+/* Small Tablets (768px and up) */
+@media (min-width: 768px) {
+  .container-tablet {
+    padding: var(--mobile-padding-xl);
+    max-width: 728px;
+    margin: 0 auto;
+  }
+  
+  .grid-tablet {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--mobile-padding-lg);
+  }
+  
+  .sidebar-tablet {
+    width: 280px;
+  }
+  
+  .main-content-tablet {
+    margin-left: 280px;
+  }
+}
+
+/* Medium Tablets (834px and up) */
+@media (min-width: 834px) {
+  .container-md-tablet {
+    max-width: 800px;
+  }
+  
+  .grid-md-tablet {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .sidebar-md-tablet {
+    width: 320px;
+  }
+  
+  .main-content-md-tablet {
+    margin-left: 320px;
+  }
+}
+
+/* Large Tablets/Desktop (1024px and up) */
+@media (min-width: 1024px) {
+  .container-desktop {
+    max-width: 1200px;
+    padding: 0 var(--mobile-padding-xl);
+  }
+  
+  .grid-desktop {
+    grid-template-columns: repeat(12, 1fr);
+  }
+  
+  .sidebar-desktop {
+    width: 350px;
+  }
+  
+  .main-content-desktop {
+    margin-left: 350px;
+  }
+}
+
+/* ======== SAFE AREA SUPPORT ======== */
+.safe-area-container {
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* ======== MOBILE-SPECIFIC COMPONENTS ======== */
+
+/* Mobile Navigation */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 var(--mobile-padding-md);
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.mobile-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-nav-item.active {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* Mobile Chat Interface */
+.mobile-chat-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 60px; /* Space for mobile nav */
+}
+
+.mobile-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--mobile-padding-md);
+  padding-bottom: 80px; /* Space for input */
+}
+
+.mobile-input-container {
+  position: fixed;
+  bottom: 60px; /* Above mobile nav */
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--mobile-padding-md);
+}
+
+/* Mobile File Explorer */
+.mobile-file-explorer {
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 80%;
+  max-width: 320px;
+  height: 100vh;
+  background: rgba(30, 30, 30, 0.98);
+  backdrop-filter: blur(10px);
+  transition: left 0.3s ease;
+  z-index: 999;
+  overflow-y: auto;
+}
+
+.mobile-file-explorer.open {
+  left: 0;
+}
+
+.mobile-file-item {
+  display: flex;
+  align-items: center;
+  padding: var(--mobile-padding-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+/* Mobile Settings */
+.mobile-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--mobile-padding-md);
+  padding: var(--mobile-padding-md);
+}
+
+.mobile-setting-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: var(--mobile-padding-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ======== GESTURE SUPPORT ======== */
+.swipe-container {
+  touch-action: pan-x;
+  overflow-x: hidden;
+}
+
+.swipe-item {
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+
+.swipe-item.swiped-left {
+  transform: translateX(-80px);
+}
+
+.swipe-item.swiped-right {
+  transform: translateX(80px);
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-actions.left {
+  left: 0;
+  background: #ef4444;
+}
+
+.swipe-actions.right {
+  right: 0;
+  background: #22c55e;
+}
+
+/* ======== PLATFORM OPTIMIZATIONS ======== */
+
+/* Huawei EMUI optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 2) and (max-width: 428px) {
+  .huawei-optimized {
+    /* Huawei specific performance optimizations */
+    transform: translateZ(0); /* Hardware acceleration */
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Android optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .android-optimized {
+    /* Android specific fixes */
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+}
+
+/* iOS optimizations */
+@supports (-webkit-touch-callout: none) {
+  .ios-optimized {
+    /* iOS specific optimizations */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+}
+
+/* ======== PERFORMANCE OPTIMIZATIONS ======== */
+.gpu-accelerated {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ======== DARK MODE MOBILE ======== */
+@media (prefers-color-scheme: dark) {
+  .mobile-nav {
+    background: rgba(17, 17, 17, 0.95);
+  }
+  
+  .mobile-input-container {
+    background: rgba(17, 17, 17, 0.95);
+  }
+  
+  .mobile-file-explorer {
+    background: rgba(17, 17, 17, 0.98);
+  }
+}
+
+/* ======== REDUCED MOTION ======== */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-item,
+  .mobile-file-item,
+  .swipe-item {
+    transition: none;
+  }
+  
+  .gpu-accelerated {
+    will-change: auto;
+  }
+}
+
+/* ======== HIGH CONTRAST ======== */
+@media (prefers-contrast: high) {
+  .mobile-nav-item,
+  .mobile-file-item {
+    border: 2px solid currentColor;
+  }
+}

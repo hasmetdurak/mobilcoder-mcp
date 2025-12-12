@@ -1,35 +1,170 @@
 import React, { useState, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { X, Check, FileCode, ChevronDown } from 'lucide-react';
+import { X, Check, FileCode, ChevronDown, Plus, Minus } from 'lucide-react';
+import { generateDiff, DiffLine, getLineNumbers } from '../../lib/diff';
 
 interface DiffViewerProps {
     oldCode: string;
     newCode: string;
     fileName: string;
-    summary?: string; // AI generated summary
+    summary?: string;
     onClose: () => void;
     onApply: () => void;
 }
 
 const DiffViewer: React.FC<DiffViewerProps> = ({ oldCode, newCode, fileName, summary, onClose, onApply }) => {
     const [isVisible, setIsVisible] = useState(false);
+    const [diff, setDiff] = useState<DiffLine[]>([]);
+    const [showLineNumbers, setShowLineNumbers] = useState(true);
+    const [viewMode, setViewMode] = useState<'split' | 'unified'>('split');
 
     useEffect(() => {
         setIsVisible(true);
-    }, []);
+        // Generate diff when component mounts
+        const diffResult = generateDiff(oldCode, newCode, fileName);
+        setDiff(diffResult.lines);
+    }, [oldCode, newCode, fileName]);
 
     const handleClose = () => {
         setIsVisible(false);
-        setTimeout(onClose, 300); // Wait for animation
+        setTimeout(onClose, 300);
     };
+
+    const getLineClass = (line: DiffLine) => {
+        switch (line.type) {
+            case 'added':
+                return 'bg-green-900/30 border-l-2 border-green-500';
+            case 'removed':
+                return 'bg-red-900/30 border-l-2 border-red-500';
+            default:
+                return 'border-l-2 border-transparent';
+        }
+    };
+
+    const getLineNumberClass = (line: DiffLine) => {
+        switch (line.type) {
+            case 'added':
+                return 'text-green-400 bg-green-900/20';
+            case 'removed':
+                return 'text-red-400 bg-red-900/20';
+            default:
+                return 'text-gray-500';
+        }
+    };
+
+    const renderSplitView = () => {
+        const lineNumbers = getLineNumbers(diff);
+        
+        return (
+            <div className="flex flex-1 overflow-hidden">
+                {/* Old Code */}
+                <div className="flex-1 border-r border-gray-700">
+                    <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                        <h3 className="text-sm font-medium text-gray-300">Original</h3>
+                    </div>
+                    <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                        {diff.map((line, index) => (
+                            <div key={`old-${index}`} className="flex">
+                                {showLineNumbers && (
+                                    <div className={`w-12 text-right pr-2 text-xs font-mono border-r border-gray-800 ${getLineNumberClass(line)}`}>
+                                        {line.oldLineNumber || ''}
+                                    </div>
+                                )}
+                                <div className={`flex-1 px-3 py-1 font-mono text-sm ${getLineClass(line)}`}>
+                                    {line.type === 'removed' ? (
+                                        <span className="text-red-300">{line.content}</span>
+                                    ) : line.type === 'unchanged' ? (
+                                        <span className="text-gray-300">{line.content}</span>
+                                    ) : (
+                                        <span className="text-gray-600">{' '}</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* New Code */}
+                <div className="flex-1">
+                    <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                        <h3 className="text-sm font-medium text-gray-300">Modified</h3>
+                    </div>
+                    <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                        {diff.map((line, index) => (
+                            <div key={`new-${index}`} className="flex">
+                                {showLineNumbers && (
+                                    <div className={`w-12 text-right pr-2 text-xs font-mono border-r border-gray-800 ${getLineNumberClass(line)}`}>
+                                        {line.newLineNumber || ''}
+                                    </div>
+                                )}
+                                <div className={`flex-1 px-3 py-1 font-mono text-sm ${getLineClass(line)}`}>
+                                    {line.type === 'added' ? (
+                                        <span className="text-green-300">{line.content}</span>
+                                    ) : line.type === 'unchanged' ? (
+                                        <span className="text-gray-300">{line.content}</span>
+                                    ) : (
+                                        <span className="text-gray-600">{' '}</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderUnifiedView = () => {
+        return (
+            <div className="flex-1 overflow-hidden">
+                <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                    <h3 className="text-sm font-medium text-gray-300">Unified Diff</h3>
+                </div>
+                <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                    {diff.map((line, index) => (
+                        <div key={`unified-${index}`} className="flex">
+                            {showLineNumbers && (
+                                <div className={`w-12 text-right pr-2 text-xs font-mono border-r border-gray-800 ${getLineNumberClass(line)}`}>
+                                    {line.oldLineNumber || line.newLineNumber || ''}
+                                </div>
+                            )}
+                            <div className="flex-1 flex items-center px-3 py-1 font-mono text-sm">
+                                {line.type === 'removed' && (
+                                    <>
+                                        <Minus className="w-4 h-4 text-red-400 mr-2 flex-shrink-0" />
+                                        <span className="text-red-300">{line.content}</span>
+                                    </>
+                                )}
+                                {line.type === 'added' && (
+                                    <>
+                                        <Plus className="w-4 h-4 text-green-400 mr-2 flex-shrink-0" />
+                                        <span className="text-green-300">{line.content}</span>
+                                    </>
+                                )}
+                                {line.type === 'unchanged' && (
+                                    <>
+                                        <div className="w-4 mr-2" />
+                                        <span className="text-gray-300">{line.content}</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const additions = diff.filter(line => line.type === 'added').length;
+    const deletions = diff.filter(line => line.type === 'removed').length;
 
     return (
         <div className={`fixed inset-0 z-50 flex items-end justify-center transition-all duration-300 ${isVisible ? 'bg-black/60 backdrop-blur-sm' : 'bg-transparent pointer-events-none'}`}>
 
             {/* Card Container */}
             <div
-                className={`w-full max-w-lg bg-[#1e1e1e] rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] transition-transform duration-300 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
+                className={`w-full max-w-6xl bg-[#1e1e1e] rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] transition-transform duration-300 ease-out ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
             >
                 {/* Drag Handle / Header */}
                 <div className="flex flex-col items-center pt-3 pb-2 border-b border-gray-800 bg-[#252526] rounded-t-2xl cursor-grab active:cursor-grabbing" onClick={handleClose}>
@@ -45,6 +180,41 @@ const DiffViewer: React.FC<DiffViewerProps> = ({ oldCode, newCode, fileName, sum
                     </div>
                 </div>
 
+                {/* Summary Bar */}
+                <div className="bg-gray-800/50 border-b border-gray-700 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-green-400" />
+                                <span className="text-sm text-green-400 font-medium">{additions}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Minus className="w-4 h-4 text-red-400" />
+                                <span className="text-sm text-red-400 font-medium">{deletions}</span>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowLineNumbers(!showLineNumbers)}
+                                className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                    showLineNumbers ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                                }`}
+                            >
+                                Line Numbers
+                            </button>
+                            <button
+                                onClick={() => setViewMode(viewMode === 'split' ? 'unified' : 'split')}
+                                className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                    viewMode === 'split' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                                }`}
+                            >
+                                {viewMode === 'split' ? 'Split View' : 'Unified View'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 {/* AI Summary */}
                 {summary && (
                     <div className="px-4 py-3 bg-blue-500/10 border-b border-blue-500/20">
@@ -53,21 +223,8 @@ const DiffViewer: React.FC<DiffViewerProps> = ({ oldCode, newCode, fileName, sum
                 )}
 
                 {/* Diff Content */}
-                <div className="flex-1 overflow-auto p-0">
-                    <SyntaxHighlighter
-                        language="typescript"
-                        style={vscDarkPlus}
-                        customStyle={{ margin: 0, padding: '1rem', fontSize: '13px', lineHeight: '1.5', background: 'transparent' }}
-                        showLineNumbers={true}
-                        wrapLines={true}
-                        lineProps={(lineNumber) => {
-                            // Simple heuristic for diff highlighting (real implementation would use a diff library)
-                            // This is a placeholder for visual effect
-                            return {};
-                        }}
-                    >
-                        {newCode}
-                    </SyntaxHighlighter>
+                <div className="flex-1 overflow-hidden">
+                    {viewMode === 'split' ? renderSplitView() : renderUnifiedView()}
                 </div>
 
                 {/* Fixed Action Buttons */}

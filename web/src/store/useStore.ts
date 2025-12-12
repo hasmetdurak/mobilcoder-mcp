@@ -22,6 +22,8 @@ interface Store {
   messages: Message[];
   theme: 'light' | 'dark';
   notifications: boolean;
+  commandHistory: string[];
+  contextFiles: { path: string; content: string }[];
   setUser: (user: User | null) => void;
   setConnectionCode: (code: string | null) => void;
   setConnected: (connected: boolean) => void;
@@ -29,6 +31,10 @@ interface Store {
   clearMessages: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   setNotifications: (enabled: boolean) => void;
+  addToHistory: (command: string) => void;
+  addContextFile: (file: { path: string; content: string }) => void;
+  removeContextFile: (path: string) => void;
+  clearContextFiles: () => void;
 }
 
 export const useStore = create<Store>()(
@@ -40,6 +46,8 @@ export const useStore = create<Store>()(
       messages: [],
       theme: 'dark',
       notifications: true,
+      commandHistory: [],
+      contextFiles: [],
       setUser: (user) => set({ user }),
       setConnectionCode: (code) => set({ connectionCode: code }),
       setConnected: (connected) => set({ isConnected: connected }),
@@ -57,6 +65,18 @@ export const useStore = create<Store>()(
       clearMessages: () => set({ messages: [] }),
       setTheme: (theme) => set({ theme }),
       setNotifications: (enabled) => set({ notifications: enabled }),
+      addToHistory: (command) =>
+        set((state) => {
+          const newHistory = [command, ...state.commandHistory.filter((c) => c !== command)].slice(0, 10);
+          return { commandHistory: newHistory };
+        }),
+      addContextFile: (file) => set((state) => ({
+        contextFiles: [...state.contextFiles.filter(f => f.path !== file.path), file]
+      })),
+      removeContextFile: (path) => set((state) => ({
+        contextFiles: state.contextFiles.filter(f => f.path !== path)
+      })),
+      clearContextFiles: () => set({ contextFiles: [] }),
     }),
     {
       name: 'mobilecoder-storage',
@@ -66,6 +86,8 @@ export const useStore = create<Store>()(
         connectionCode: state.connectionCode,
         theme: state.theme,
         notifications: state.notifications,
+        commandHistory: state.commandHistory,
+        contextFiles: state.contextFiles,
       }),
     }
   )
